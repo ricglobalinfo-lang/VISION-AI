@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ROOT://SURVEILLANCE — AI NODE</title>
+  <style>
+    :root {
+      --void: #020604;
+      --bg0: #06110a;
+      --granite: #0c1e14;
+      --line: #2a8f52;
+      --line-dim: #1a5c36;
+      --text: #b8ffce;
+      --muted: #3d8f5c;
+      --accent: #33ff88;
+      --accent-dim: #1a9a52;
+      --phosphor: #66ff99;
+      --danger: #ff3344;
+      --warn: #ffcc33;
+      --known: #33ff88;
+      --font: Consolas, "Courier New", monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: var(--void); }
+    body {
+      min-height: 100vh;
+      font-family: var(--font);
+      color: var(--text);
+      background: var(--bg0);
+    }
+    .wrap {
+      width: min(1480px, calc(100% - 1.5rem));
+      margin: 0 auto;
+      padding: 0.85rem 0 2rem;
+    }
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.5rem;
+      align-items: center;
+      padding: 0.35rem 0.65rem;
+      margin-bottom: 0.85rem;
+      border: 1px solid var(--line-dim);
+      background: var(--granite);
+      font-size: 0.68rem;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    .topbar .alive { color: var(--accent); }
+    .topbar .cursor {
+      display: inline-block;
+      width: 0.55em;
+      height: 1em;
+      background: var(--accent);
+      margin-left: 0.15em;
+      vertical-align: text-bottom;
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.75rem;
+      align-items: flex-end;
+      margin-bottom: 1rem;
+      padding-bottom: 0.85rem;
+      border-bottom: 1px solid var(--line-dim);
+    }
+    .brand {
+      font-size: clamp(1.1rem, 3vw, 1.65rem);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .brand-sub {
+      margin-top: 0.35rem;
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+    .brand-sub span { color: var(--phosphor); }
+    h1 {
+      position: absolute;
+      width: 1px; height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      font-size: 0.68rem;
+      color: var(--muted);
+    }
+    .pill {
+      border: 1px solid var(--line-dim);
+      padding: 0.28rem 0.5rem;
+      background: #041008;
+    }
+    .pill b { color: var(--accent); font-weight: 600; }
+    .dot {
+      display: inline-block;
+      width: 0.45rem; height: 0.45rem;
+      background: var(--muted);
+      margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .dot.ok { background: var(--accent); }
+    .dot.err { background: var(--danger); }
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-bottom: 0.75rem;
+    }
+    .tabs button {
+      font-family: var(--font);
+      background: #041008;
+      color: var(--muted);
+      border: 1px solid var(--line-dim);
+      padding: 0.38rem 0.7rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    .tabs button:hover {
+      color: var(--accent);
+      border-color: var(--accent-dim);
+    }
+    .tabs button.active {
+      color: #021008;
+      background: var(--accent);
+      border-color: var(--accent);
+      font-weight: 700;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr minmax(260px, 320px);
+      gap: 0.85rem;
+      align-items: start;
+    }
+    .stage-wrap {
+      position: relative;
+      min-width: 0; /* grid shrink bug */
+    }
+    .stage {
+      border: 1px solid var(--line);
+      background: #010805;
+      aspect-ratio: 16 / 9;
+      width: 100%;
+      overflow: hidden;
+      position: relative;
+    }
+    .stage::before {
+      content: "LIVE FEED // ENCRYPTED";
+      position: absolute;
+      top: 0.45rem;
+      right: 0.55rem;
+      z-index: 2;
+      font-size: 0.62rem;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      pointer-events: none;
+      opacity: 0.85;
+    }
+    .stage img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      background: #010805;
+    }
+    .cam-grid {
+      display: none;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.55rem;
+      grid-column: 1;
+      min-width: 0;
+    }
+    .layout > .side { grid-column: 2; grid-row: 1 / span 2; }
+    .layout.grid-mode .stage-wrap { display: none; }
+    .layout.grid-mode .cam-grid { display: grid; }
+    .layout.grid-mode > .side { grid-row: 1; }
+    .tile {
+      border: 1px solid var(--line-dim);
+      background: #010805;
+      aspect-ratio: 16 / 9;
+      position: relative;
+      overflow: hidden;
+      min-width: 0;
+    }
+    .tile img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .tile .cap {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      padding: 0.28rem 0.4rem;
+      font-size: 0.65rem;
+      background: #041008;
+      color: var(--accent-dim);
+      border-top: 1px solid var(--line-dim);
+      letter-spacing: 0.04em;
+    }
+    .flash {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 3;
+      background: rgba(255, 40, 50, 0.35);
+      opacity: 0;
+    }
+    .flash.on { opacity: 1; }
+    .flash.fight { background: rgba(255, 20, 30, 0.5); }
+    .flash.litter { background: rgba(255, 140, 0, 0.45); }
+    .side {
+      border: 1px solid var(--line);
+      background: var(--granite);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      height: min(82vh, 900px);
+      max-height: min(82vh, 900px);
+      min-width: 0;
+      overflow: hidden;
+    }
+    .side h2 {
+      font-size: 0.78rem;
+      padding: 0.65rem 0.75rem;
+      border-bottom: 1px solid var(--line-dim);
+      color: var(--accent);
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+    .log {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 0.4rem;
+      font-size: 0.72rem;
+      background: #041008;
+    }
+    .row {
+      padding: 0.4rem 0.45rem;
+      border-bottom: 1px solid var(--line-dim);
+      line-height: 1.35;
+      color: var(--phosphor);
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .row.unknown {
+      border-left: 2px solid var(--warn);
+      color: var(--warn);
+      background: #1a1808;
+    }
+    .row.known { border-left: 2px solid var(--known); }
+    .row.fight {
+      border-left: 2px solid var(--danger);
+      background: #1a080a;
+      font-weight: 700;
+      color: #ff8890;
+    }
+    .row.litter {
+      border-left: 2px solid #ff9900;
+      background: #1a1208;
+      font-weight: 700;
+      color: #ffcc66;
+    }
+    .row .t { color: var(--muted); margin-right: 0.35rem; }
+
+    /* iPhone / mobil: kamera birinchi, log pastida scroll — o'lcham o'zgarmaydi */
+    @media (max-width: 900px) {
+      .wrap {
+        width: calc(100% - 1rem);
+        padding: 0.55rem 0 1.4rem;
+      }
+      .layout {
+        grid-template-columns: 1fr;
+        gap: 0.65rem;
+      }
+      .layout > .side,
+      .layout.grid-mode > .side {
+        grid-column: 1;
+        grid-row: auto;
+        width: 100%;
+        height: auto;
+        max-height: min(34dvh, 260px);
+        min-height: 160px;
+      }
+      .stage-wrap {
+        width: 100%;
+      }
+      .stage {
+        aspect-ratio: 16 / 9;
+        max-height: none;
+      }
+      .cam-grid {
+        grid-column: 1;
+        grid-template-columns: 1fr 1fr;
+      }
+      .tabs button {
+        padding: 0.45rem 0.55rem;
+        font-size: 0.68rem;
+      }
+      .topbar { font-size: 0.58rem; }
+      .brand { letter-spacing: 0.08em; }
+    }
+
+    @media (max-width: 430px) {
+      .layout > .side,
+      .layout.grid-mode > .side {
+        max-height: min(30dvh, 220px);
+      }
+      .cam-grid {
+        grid-template-columns: 1fr;
+      }
+      .meta { gap: 0.3rem; }
+      .pill { font-size: 0.62rem; padding: 0.22rem 0.4rem; }
+    }
+    .panel {
+      margin-top: 0.9rem;
+      border: 1px solid var(--line);
+      background: var(--granite);
+      padding: 0.95rem 1rem 1.05rem;
+    }
+    .panel h2 {
+      font-size: 0.9rem;
+      margin-bottom: 0.3rem;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .panel .hint {
+      color: var(--muted);
+      font-size: 0.75rem;
+      margin-bottom: 0.85rem;
+      line-height: 1.45;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr auto;
+      gap: 0.7rem;
+      align-items: end;
+    }
+    @media (max-width: 800px) {
+      .form-grid { grid-template-columns: 1fr; }
+    }
+    label {
+      display: block;
+      font-size: 0.68rem;
+      color: var(--muted);
+      margin-bottom: 0.3rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    input[type="text"], input[type="file"] {
+      width: 100%;
+      font: inherit;
+      color: var(--text);
+      background: #041008;
+      border: 1px solid var(--line-dim);
+      padding: 0.5rem 0.6rem;
+      outline: none;
+    }
+    input[type="text"]:focus { border-color: var(--accent); }
+    input[type="file"] { padding: 0.35rem; color: var(--muted); }
+    button, .btn {
+      font-family: var(--font);
+      color: #021008;
+      background: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 0.5rem 0.85rem;
+      cursor: pointer;
+      white-space: nowrap;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+    button:disabled { opacity: 0.5; cursor: wait; }
+    button.danger {
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid var(--danger);
+      padding: 0.2rem 0.45rem;
+      font-size: 0.68rem;
+    }
+    button.secondary {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid var(--accent-dim);
+      padding: 0.22rem 0.45rem;
+      font-size: 0.68rem;
+    }
+    .msg {
+      margin-top: 0.6rem;
+      font-size: 0.75rem;
+      min-height: 1.2em;
+    }
+    .msg.ok { color: var(--accent); }
+    .msg.err { color: var(--danger); }
+    .people {
+      margin-top: 0.9rem;
+      display: grid;
+      gap: 0.4rem;
+    }
+    .person {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 0.6rem;
+      border: 1px solid var(--line-dim);
+      background: #041008;
+    }
+    .person .name { font-weight: 600; color: var(--phosphor); }
+    .person .meta { color: var(--muted); font-size: 0.72rem; }
+    .unknown-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.7rem;
+      margin-top: 0.7rem;
+    }
+    .ucard {
+      border: 1px solid var(--line-dim);
+      background: #041008;
+      overflow: hidden;
+    }
+    .ucard img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      display: block;
+      background: #010805;
+    }
+    .ucard .body { padding: 0.55rem 0.65rem 0.7rem; }
+    .ucard .name { font-weight: 600; margin-bottom: 0.2rem; color: var(--warn); }
+    .ucard .meta { color: var(--muted); font-size: 0.68rem; line-height: 1.35; margin-bottom: 0.5rem; }
+    .ucard .actions { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+    .ucard input[type="text"] {
+      width: 100%;
+      margin-bottom: 0.35rem;
+      font-size: 0.72rem;
+      padding: 0.35rem 0.45rem;
+    }
+    footer {
+      margin-top: 0.9rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 0.68rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      border-top: 1px solid var(--line-dim);
+      padding-top: 0.75rem;
+    }
+    .legend span { margin-right: 0.85rem; }
+    .lg { color: var(--known); }
+    .lr { color: var(--danger); }
+    .lb { color: #44ddff; }
+    .lw { color: var(--warn); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <span>&gt; root@kurbonov:~# ./surveillance --local<span class="cursor"></span></span>
+      <span class="alive">● SECURE CHANNEL · LOCALHOST:8080</span>
+    </div>
+
+    <header>
+      <div>
+        <div class="brand">◈ NEURAL.EYE / NODE-01</div>
+        <div class="brand-sub">// <span>OBJ.DETECT</span> · <span>FACE.ID</span> · <span>FIGHT.ALERT</span> · <span>LITTER.ALERT</span> · OFFLINE</div>
+        <h1>Aniqlash + yuz tanish</h1>
+      </div>
+      <div class="meta">
+        <span class="pill"><span id="dot" class="dot"></span><span id="st">ulanish…</span></span>
+        <span class="pill">FPS <b id="fps">—</b></span>
+        <span class="pill">LAG <b id="lag">—</b> ms</span>
+        <span class="pill">FACE.DB <b id="faces">—</b></span>
+      </div>
+    </header>
+
+    <div class="tabs" id="camTabs"></div>
+
+    <div class="layout" id="mainLayout">
+      <div class="stage-wrap">
+        <div class="stage">
+          <img id="feed" alt="AI stream">
+          <div class="flash" id="flash"></div>
+        </div>
+      </div>
+      <div class="cam-grid" id="camGrid"></div>
+      <aside class="side">
+        <h2>// event.log</h2>
+        <div class="log" id="log"></div>
+      </aside>
+    </div>
+
+    <section class="panel">
+      <h2>&gt; enroll.user — FIO + FACE</h2>
+      <p class="hint">FIO ni yozing va 1–5 ta aniq yuz fotosini yuklang. Saqlangach AI darhol tanib olishni boshlaydi.</p>
+      <form id="enrollForm" class="form-grid">
+        <div>
+          <label for="fio">FIO (Familiya Ism Otchestvo)</label>
+          <input id="fio" name="fio" type="text" placeholder="Masalan: Karimov Ali Valiyevich" required maxlength="120">
+        </div>
+        <div>
+          <label for="photos">Yuz rasmlari</label>
+          <input id="photos" name="photos" type="file" accept="image/*" multiple required>
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button type="submit" id="saveBtn">[ SAQLASH ]</button>
+        </div>
+      </form>
+      <div class="msg" id="formMsg"></div>
+      <div class="people" id="peopleList"></div>
+    </section>
+
+    <section class="panel">
+      <h2>&gt; unknown.targets</h2>
+      <p class="hint">Kamera noma’lum yuzni aniqlaganda rasmini avtomatik saqlaydi. Kerak bo‘lsa FIO berib tanishlar ro‘yxatiga qo‘shing.</p>
+      <div class="unknown-grid" id="unknownList"></div>
+    </section>
+
+    <footer>
+      <div class="legend">
+        <span class="lg">■ AUTH.OK</span>
+        <span class="lw">■ UNKNOWN</span>
+        <span class="lb">■ OBJECT</span>
+        <span class="lr">■ FIGHT</span>
+      </div>
+      <div>encrypted · no cloud · root only</div>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      var logEl = document.getElementById("log");
+      var flash = document.getElementById("flash");
+      var formMsg = document.getElementById("formMsg");
+      var peopleList = document.getElementById("peopleList");
+      var unknownList = document.getElementById("unknownList");
+      var saveBtn = document.getElementById("saveBtn");
+      var seen = {};
+      var flashTimer = null;
+      var lastUnknownCount = -1;
+      var activeCam = "cam73";
+      var mode = "single"; // single | grid
+      var cameras = [];
+      var feedToken = 0;
+
+      function getFeed() {
+        return document.getElementById("feed");
+      }
+
+      /** MJPEG ulanishini majburan uzadi (src o'chirish yetarli emas). */
+      function killFeed() {
+        feedToken += 1;
+        var old = getFeed();
+        if (!old) return;
+        try {
+          old.onload = null;
+          old.onerror = null;
+          old.removeAttribute("src");
+          old.src = "";
+        } catch (e) {}
+        var neu = old.cloneNode(false);
+        neu.id = "feed";
+        neu.alt = "AI stream";
+        old.parentNode.replaceChild(neu, old);
+        bindFeedError(neu);
+      }
+
+      function startFeed(camId) {
+        killFeed();
+        var token = feedToken;
+        var img = getFeed();
+        if (!img || mode !== "single") return;
+        img.src = "/ai/stream/" + camId + "?t=" + Date.now() + "&n=" + token;
+      }
+
+      function killGrid() {
+        stopGridRefresh();
+        document.querySelectorAll("#camGrid img").forEach(function (im) {
+          try {
+            im.onload = null;
+            im.onerror = null;
+            im.removeAttribute("src");
+            im.src = "";
+          } catch (e) {}
+        });
+      }
+
+      function stopAllMedia() {
+        killFeed();
+        killGrid();
+      }
+
+      function bindFeedError(img) {
+        img.onerror = function () {
+          if (mode !== "single") return;
+          var token = feedToken;
+          setTimeout(function () {
+            if (mode !== "single" || token !== feedToken) return;
+            startFeed(activeCam);
+          }, 2000);
+        };
+      }
+
+      function setStatus(ok, text) {
+        var dot = document.getElementById("dot");
+        dot.className = "dot " + (ok ? "ok" : "err");
+        document.getElementById("st").textContent = text;
+      }
+
+      function flashAlert(kind) {
+        flash.classList.add("on");
+        flash.classList.remove("fight");
+        flash.classList.remove("litter");
+        if (kind === "fight") flash.classList.add("fight");
+        if (kind === "litter") flash.classList.add("litter");
+        if (flashTimer) clearTimeout(flashTimer);
+        flashTimer = setTimeout(function () {
+          flash.classList.remove("on");
+          flash.classList.remove("fight");
+          flash.classList.remove("litter");
+        }, (kind === "fight" || kind === "litter") ? 1600 : 700);
+      }
+
+      function renderEvents(items) {
+        if (!items || !items.length) {
+          if (lastEventsKey !== "empty") {
+            lastEventsKey = "empty";
+            logEl.innerHTML = '<div class="row" style="color:var(--muted)">&gt; null — hali hodisa yo‘q_</div>';
+          }
+          return;
+        }
+        var key = items.slice(0, 12).map(function (e) { return e.epoch + ":" + e.label; }).join("|");
+        if (key === lastEventsKey) return;
+        lastEventsKey = key;
+        logEl.innerHTML = items.map(function (e) {
+          var cls = e.kind === "fight" ? "fight" : (e.kind === "litter" ? "litter" : (e.kind === "unknown" ? "unknown" : "known"));
+          var ek = e.epoch + ":" + e.label;
+          if ((e.kind === "unknown" || e.kind === "fight" || e.kind === "litter") && !seen[ek]) {
+            seen[ek] = true;
+            flashAlert(e.kind);
+          }
+          var prefix = e.kind === "fight" ? "🚨 " : ((e.kind === "unknown" || e.kind === "litter") ? "⚠ " : "");
+          return '<div class="row ' + cls + '"><span class="t">' + e.ts + '</span>' +
+            (e.camera ? '<span class="t">[' + e.camera + ']</span> ' : '') +
+            prefix + e.label +
+            (e.detail ? ' <span class="t">' + e.detail + "</span>" : "") + "</div>";
+        }).join("");
+      }
+
+      var tabsBuilt = false;
+      var gridBuilt = false;
+      var gridTimer = null;
+      var lastEventsKey = "";
+      var lastUnknownKey = "";
+
+      function setFocus(camId, focusMode) {
+        fetch("/ai/focus", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ camera: camId, mode: focusMode })
+        }).catch(function () {});
+      }
+
+      function selectCam(id) {
+        activeCam = id;
+        mode = "single";
+        killGrid();
+        document.getElementById("mainLayout").classList.remove("grid-mode");
+        startFeed(id);
+        setFocus(id, "single");
+        updateTabs();
+      }
+
+      function selectGrid() {
+        mode = "grid";
+        killFeed();
+        document.getElementById("mainLayout").classList.add("grid-mode");
+        ensureGrid();
+        startGridRefresh();
+        setFocus(activeCam || "cam73", "grid");
+        updateTabs();
+      }
+
+      function ensureTabs() {
+        if (tabsBuilt || !cameras.length) return;
+        var tabs = document.getElementById("camTabs");
+        tabs.innerHTML = "";
+        cameras.forEach(function (c) {
+          var btn = document.createElement("button");
+          btn.type = "button";
+          btn.setAttribute("data-id", c.id);
+          btn.textContent = c.name;
+          btn.addEventListener("click", function () { selectCam(c.id); });
+          tabs.appendChild(btn);
+        });
+        var all = document.createElement("button");
+        all.type = "button";
+        all.setAttribute("data-id", "__grid");
+        all.textContent = "Hammasi";
+        all.addEventListener("click", selectGrid);
+        tabs.appendChild(all);
+        tabsBuilt = true;
+      }
+
+      function updateTabs() {
+        ensureTabs();
+        document.querySelectorAll("#camTabs button").forEach(function (btn) {
+          var id = btn.getAttribute("data-id");
+          var cam = cameras.find(function (c) { return c.id === id; });
+          if (id === "__grid") {
+            btn.className = mode === "grid" ? "active" : "";
+          } else {
+            btn.className = (mode === "single" && activeCam === id) ? "active" : "";
+            if (cam) btn.textContent = cam.name + (cam.running ? "" : " !");
+          }
+        });
+      }
+
+      function ensureGrid() {
+        if (gridBuilt || !cameras.length) return;
+        var grid = document.getElementById("camGrid");
+        grid.innerHTML = cameras.map(function (c) {
+          return '<div class="tile" data-id="' + c.id + '">' +
+            '<img alt="" data-cam="' + c.id + '">' +
+            '<div class="cap" data-cap="' + c.id + '"></div></div>';
+        }).join("");
+        gridBuilt = true;
+      }
+
+      function refreshGridSnapshots() {
+        if (mode !== "grid") return;
+        ensureGrid();
+        cameras.forEach(function (c) {
+          var img = document.querySelector('#camGrid img[data-cam="' + c.id + '"]');
+          var cap = document.querySelector('#camGrid [data-cap="' + c.id + '"]');
+          if (img) img.src = "/ai/snapshot/" + c.id + ".jpg?t=" + Date.now();
+          if (cap) {
+            cap.textContent = c.name + " · " + (c.fps || 0).toFixed(1) + "fps · lag " +
+              (c.lag_ms || 0) + "ms" + (c.error ? " · " + c.error : "");
+          }
+        });
+      }
+
+      function startGridRefresh() {
+        stopGridRefresh();
+        refreshGridSnapshots();
+        gridTimer = setInterval(refreshGridSnapshots, 700);
+      }
+
+      function stopGridRefresh() {
+        if (gridTimer) {
+          clearInterval(gridTimer);
+          gridTimer = null;
+        }
+      }
+
+      function loadPeople() {
+        fetch("/ai/people", { cache: "no-store" })
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            var people = (data && data.people) || [];
+            if (!people.length) {
+              peopleList.innerHTML = '<div class="meta">Hali hech kim qo‘shilmagan</div>';
+              return;
+            }
+            peopleList.innerHTML = people.map(function (p) {
+              return '<div class="person"><div><div class="name"></div><div class="meta"></div></div><button type="button" class="danger" data-fio="">O‘chirish</button></div>';
+            }).join("");
+            var nodes = peopleList.querySelectorAll(".person");
+            people.forEach(function (p, i) {
+              nodes[i].querySelector(".name").textContent = p.fio;
+              nodes[i].querySelector(".meta").textContent = p.photos + " ta rasm";
+              var btn = nodes[i].querySelector("button");
+              btn.setAttribute("data-fio", p.fio);
+              btn.addEventListener("click", function () {
+                if (!confirm("O‘chirish: " + p.fio + "?")) return;
+                fetch("/ai/people/" + encodeURIComponent(p.fio), { method: "DELETE" })
+                  .then(function (r) { return r.json(); })
+                  .then(function (res) {
+                    if (!res.ok) throw new Error(res.error || "xato");
+                    formMsg.className = "msg ok";
+                    formMsg.textContent = "O‘chirildi. DB: " + res.faces_loaded;
+                    loadPeople();
+                  })
+                  .catch(function (err) {
+                    formMsg.className = "msg err";
+                    formMsg.textContent = err.message || "O‘chirishda xato";
+                  });
+              });
+            });
+          })
+          .catch(function () {
+            peopleList.innerHTML = '<div class="msg err">Ro‘yxat yuklanmadi</div>';
+          });
+      }
+
+      function loadUnknowns() {
+        fetch("/ai/unknowns", { cache: "no-store" })
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            var people = (data && data.people) || [];
+            var key = people.map(function (p) {
+              return p.id + ":" + p.count + ":" + (p.thumb || "") + ":" + (p.last_seen || "");
+            }).join("|");
+            if (key === lastUnknownKey) return;
+            lastUnknownKey = key;
+            lastUnknownCount = people.length;
+            if (!people.length) {
+              unknownList.innerHTML = '<div class="meta">Hali begona yuz saqlanmagan</div>';
+              return;
+            }
+            unknownList.innerHTML = "";
+            people.forEach(function (p) {
+              var card = document.createElement("div");
+              card.className = "ucard";
+              var imgSrc = p.thumb
+                ? "/ai/unknowns/" + encodeURIComponent(p.id) + "/" + encodeURIComponent(p.thumb)
+                : "";
+              card.innerHTML =
+                (imgSrc ? '<img alt="" src="' + imgSrc + '">' : '<div style="aspect-ratio:1;background:#111"></div>') +
+                '<div class="body">' +
+                '<div class="name"></div>' +
+                '<div class="meta"></div>' +
+                '<input type="text" placeholder="FIO (tanish qilish)" maxlength="120">' +
+                '<div class="actions">' +
+                '<button type="button" class="secondary btn-promote">Tanish qilish</button>' +
+                '<button type="button" class="danger btn-del">O‘chirish</button>' +
+                "</div></div>";
+              card.querySelector(".name").textContent = p.label || p.id;
+              card.querySelector(".meta").textContent =
+                (p.count || 0) + " rasm · " + (p.first_seen || "—") +
+                (p.last_seen ? " → " + p.last_seen : "") +
+                (p.cameras && p.cameras.length ? " · " + p.cameras.join(", ") : "");
+              card.querySelector(".btn-del").addEventListener("click", function () {
+                if (!confirm("O‘chirish: " + (p.label || p.id) + "?")) return;
+                lastUnknownKey = "";
+                fetch("/ai/unknowns/" + encodeURIComponent(p.id), { method: "DELETE" })
+                  .then(function (r) { return r.json(); })
+                  .then(function () { loadUnknowns(); })
+                  .catch(function () {});
+              });
+              card.querySelector(".btn-promote").addEventListener("click", function () {
+                var fio = card.querySelector("input").value.trim();
+                if (!fio) { alert("FIO kiriting"); return; }
+                fetch("/ai/unknowns/" + encodeURIComponent(p.id) + "/promote", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ fio: fio })
+                })
+                  .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+                  .then(function (res) {
+                    if (!res.ok || !res.j.ok) throw new Error((res.j && res.j.error) || "xato");
+                    formMsg.className = "msg ok";
+                    formMsg.textContent = "Tanish qilindi: " + res.j.fio + " (DB: " + res.j.faces_loaded + ")";
+                    lastUnknownKey = "";
+                    loadUnknowns();
+                    loadPeople();
+                  })
+                  .catch(function (err) {
+                    formMsg.className = "msg err";
+                    formMsg.textContent = err.message || "Xato";
+                  });
+              });
+              unknownList.appendChild(card);
+            });
+          })
+          .catch(function () {
+            unknownList.innerHTML = '<div class="msg err">Begonalar yuklanmadi</div>';
+          });
+      }
+
+      document.getElementById("enrollForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+        var fio = document.getElementById("fio").value.trim();
+        var photos = document.getElementById("photos").files;
+        if (!fio || !photos.length) return;
+
+        var fd = new FormData();
+        fd.append("fio", fio);
+        for (var i = 0; i < photos.length; i++) fd.append("photos", photos[i]);
+
+        saveBtn.disabled = true;
+        formMsg.className = "msg";
+        formMsg.textContent = "Saqlanmoqda va o‘rgatilmoqda…";
+
+        fetch("/ai/people", { method: "POST", body: fd })
+          .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+          .then(function (res) {
+            if (!res.ok || !res.j.ok) throw new Error((res.j && res.j.error) || "Saqlash xatosi");
+            formMsg.className = "msg ok";
+            formMsg.textContent = "Saqlandi: " + res.j.fio + " (" + res.j.saved_photos + " rasm). DB: " + res.j.faces_loaded;
+            document.getElementById("enrollForm").reset();
+            loadPeople();
+          })
+          .catch(function (err) {
+            formMsg.className = "msg err";
+            formMsg.textContent = err.message || "Xato";
+          })
+          .then(function () { saveBtn.disabled = false; });
+      });
+
+      var polling = false;
+      function poll() {
+        if (polling) return;
+        polling = true;
+        fetch("/ai/cameras", { cache: "no-store" })
+          .then(function (r) { return r.json(); })
+          .then(function (s) {
+            cameras = s.cameras || [];
+            ensureTabs();
+            if (mode === "grid") ensureGrid();
+            document.getElementById("faces").textContent = s.faces_loaded != null ? s.faces_loaded : "—";
+            var active = cameras.find(function (c) { return c.id === activeCam; }) || cameras[0];
+            var okCount = cameras.filter(function (c) { return c.running; }).length;
+            if (mode === "grid") {
+              setStatus(okCount > 0, okCount + "/" + cameras.length + " kamera");
+            } else if (active) {
+              document.getElementById("fps").textContent = (active.fps || 0).toFixed(1);
+              document.getElementById("lag").textContent = active.lag_ms != null ? active.lag_ms : "—";
+              if (active.error) setStatus(false, active.name + ": " + active.error);
+              else if (active.running) setStatus(true, active.name + " jonli");
+              else setStatus(false, "yuklanmoqda…");
+            }
+            updateTabs();
+          })
+          .catch(function () { setStatus(false, "server yo‘q"); })
+          .then(function () { polling = false; });
+
+        fetch("/ai/events", { cache: "no-store" })
+          .then(function (r) { return r.json(); })
+          .then(renderEvents)
+          .catch(function () {});
+      }
+
+      poll();
+      loadPeople();
+      loadUnknowns();
+      setInterval(poll, 2500);
+      setInterval(loadUnknowns, 10000);
+
+      bindFeedError(getFeed());
+      startFeed(activeCam);
+      setFocus(activeCam, "single");
+
+      // Tab yashirin / sahifa yopilganda efirni to'xtat
+      document.addEventListener("visibilitychange", function () {
+        if (document.hidden) {
+          stopAllMedia();
+        } else if (mode === "single") {
+          startFeed(activeCam);
+          setFocus(activeCam, "single");
+        } else if (mode === "grid") {
+          startGridRefresh();
+          setFocus(activeCam || "cam73", "grid");
+        }
+      });
+      window.addEventListener("pagehide", stopAllMedia);
+      window.addEventListener("beforeunload", stopAllMedia);
+    })();
+  </script>
+</body>
+</html>

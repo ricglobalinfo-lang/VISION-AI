@@ -1,0 +1,89 @@
+﻿# ==============================================================================
+# Git Ignore for Multi-Camera AI Surveillance System
+# ==============================================================================
+
+# Python & Virtual Environments
+.venv/
+.venv*/
+*/.venv/
+*/.venv*/
+venv/
+*/venv/
+env/
+*/env/
+ENV/
+build/
+dist/
+*.egg-info/
+__pycache__/
+*/__pycache__/
+*.py[cod]
+*.class
+
+# AI / ML Model Weights (Exceed GitHub 100MB limit; auto-downloaded on run)
+*.pt
+*.pth
+*.onnx
+*.engine
+yolov8*.pt
+ai/yolov8*.pt
+!data/antispoof_models/.gitkeep
+
+# External Binaries, Archives & Heavy Tools
+tools/*.exe
+tools/*.zip
+tools/ffmpeg-*/
+tools/ffmpeg*
+!tools/.gitkeep
+
+# Backups & Temporary Debug Scripts/Files
+*.bak
+*.tmp
+*.pid
+ai/*.pid
+*.log
+ai/*.log
+data/*.log
+tmp_check/
+ai/tmp_check/
+ai/_verify_snaps/
+ai/_verify_snaps.json
+ai/_cameras_poll.json
+ai/_ai.html
+ai/_retest_recog.py
+
+# Video Streaming / HLS Temporary Chunks
+hls/*.ts
+hls/*.m3u8
+!hls/.gitkeep
+www/live/*.ts
+www/live/*.m3u8
+!www/live/.gitkeep
+
+# Dynamic Event Data, Logs & Captured Faces
+data/events.jsonl
+data/face_db.npz
+data/_face_debug.jpg
+data/test_snap_cam73.jpg
+data/unknown/*
+data/fight/*
+data/litter/*
+!data/unknown/.gitkeep
+!data/fight/.gitkeep
+!data/litter/.gitkeep
+!data/.gitkeep
+
+# Sensitive Face Photos (Preserve structure, ignore personal images)
+faces/*
+!faces/README.txt
+!faces/.gitkeep
+
+# IDEs & Operating System
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Jonli efir — lokal kamera</title>
+  <script src="/vendor/hls.min.js"></script>
+  <style>
+    :root {
+      --bg0: #0c1210;
+      --bg1: #15201c;
+      --line: rgba(180, 210, 190, 0.18);
+      --text: #e8f0ea;
+      --muted: #8aa094;
+      --accent: #3dba7a;
+      --danger: #e85d5d;
+      --glow: rgba(61, 186, 122, 0.35);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(61, 186, 122, 0.16), transparent 55%),
+        radial-gradient(900px 500px at 100% 0%, rgba(40, 90, 120, 0.22), transparent 50%),
+        linear-gradient(165deg, var(--bg0), var(--bg1) 55%, #0a0f0d);
+    }
+    .wrap {
+      width: min(1120px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1.75rem 0 2.5rem;
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .brand {
+      font-family: Consolas, monospace;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    h1 {
+      margin-top: 0.35rem;
+      font-size: clamp(1.45rem, 3vw, 2rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      align-items: center;
+      font-family: Consolas, monospace;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.65rem;
+      border: 1px solid var(--line);
+      background: rgba(0, 0, 0, 0.25);
+    }
+    .dot {
+      width: 0.55rem;
+      height: 0.55rem;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+    .dot.live {
+      background: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+    .dot.err { background: var(--danger); }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.45; }
+    }
+    .stage {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: #050807;
+      aspect-ratio: 16 / 9;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+    }
+    video {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #050807;
+    }
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 1.5rem;
+      text-align: center;
+      background: rgba(5, 8, 7, 0.72);
+      pointer-events: none;
+    }
+    .overlay[hidden] { display: none; }
+    .overlay p {
+      max-width: 34rem;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 0.95rem;
+    }
+    .overlay strong { color: var(--text); }
+    .spinner {
+      width: 2rem;
+      height: 2rem;
+      margin: 0 auto 0.9rem;
+      border: 2px solid var(--line);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    footer {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-top: 0.9rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    button {
+      font: inherit;
+      color: var(--text);
+      background: transparent;
+      border: 1px solid var(--line);
+      padding: 0.45rem 0.8rem;
+      cursor: pointer;
+    }
+    button:hover { border-color: var(--accent); color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <div class="brand">lokal server</div>
+        <h1>Jonli efir</h1>
+      </div>
+      <div class="meta">
+        <span class="pill"><span id="statusDot" class="dot"></span><span id="statusText">ulanish…</span></span>
+        <span class="pill">HLS · hosting yo‘q</span>
+      </div>
+    </header>
+
+    <div class="stage">
+      <video id="video" playsinline muted autoplay controls></video>
+      <div class="overlay" id="overlay">
+        <div>
+          <div class="spinner" id="spinner"></div>
+          <p id="overlayText"><strong>Jonli efir yuklanmoqda…</strong><br><br><span style="font-family:Consolas,monospace;color:var(--accent)">start-live.bat</span> ishlayotganiga ishonch hosil qiling.</p>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <span>Kamera RTSP → lokal HLS (shu kompyuter)</span>
+      <button type="button" id="reloadBtn">Qayta ulash</button>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      var STREAM = "/live/index.m3u8";
+      var video = document.getElementById("video");
+      var overlay = document.getElementById("overlay");
+      var overlayText = document.getElementById("overlayText");
+      var spinner = document.getElementById("spinner");
+      var statusDot = document.getElementById("statusDot");
+      var statusText = document.getElementById("statusText");
+      var hls = null;
+      var retryTimer = null;
+
+      function setStatus(kind, text) {
+        statusDot.className = "dot" + (kind ? " " + kind : "");
+        statusText.textContent = text;
+      }
+
+      function showOverlay(html, spinning) {
+        overlay.hidden = false;
+        spinner.hidden = !spinning;
+        overlayText.innerHTML = html;
+      }
+
+      function hideOverlay() {
+        overlay.hidden = true;
+      }
+
+      function destroy() {
+        if (retryTimer) {
+          clearTimeout(retryTimer);
+          retryTimer = null;
+        }
+        if (hls) {
+          hls.destroy();
+          hls = null;
+        }
+      }
+
+      function scheduleRetry() {
+        if (retryTimer) return;
+        retryTimer = setTimeout(function () {
+          retryTimer = null;
+          start();
+        }, 2000);
+      }
+
+      function onPlaying() {
+        hideOverlay();
+        setStatus("live", "jonli efir");
+      }
+
+      function onError(detail) {
+        setStatus("err", "uzilish");
+        showOverlay("<strong>Efir vaqtincha uzildi.</strong><br><br>" + detail + "<br>Qayta urinilmoqda…", true);
+        scheduleRetry();
+      }
+
+      function start() {
+        destroy();
+        setStatus("", "ulanish…");
+        showOverlay("<strong>Jonli efir yuklanmoqda…</strong>", true);
+
+        var url = STREAM + "?t=" + Date.now();
+
+        if (window.Hls && Hls.isSupported()) {
+          hls = new Hls({
+            enableWorker: true,
+            lowLatencyMode: true,
+            liveDurationInfinity: true,
+            liveSyncDurationCount: 2,
+            liveMaxLatencyDurationCount: 5,
+            maxLiveSyncPlaybackRate: 1.5,
+            manifestLoadingTimeOut: 8000,
+            levelLoadingTimeOut: 8000,
+            fragLoadingTimeOut: 12000
+          });
+          hls.loadSource(url);
+          hls.attachMedia(video);
+          hls.on(Hls.Events.MANIFEST_PARSED, function () {
+            var p = video.play();
+            if (p && p.catch) p.catch(function () {});
+          });
+          hls.on(Hls.Events.ERROR, function (_e, data) {
+            if (!data.fatal) return;
+            if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+              onError("Playlist yoki segment topilmadi.");
+              try { hls.startLoad(); } catch (err) {}
+            } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+              try { hls.recoverMediaError(); } catch (err) {
+                onError("Media xatosi.");
+              }
+            } else {
+              onError("Fatal HLS xatosi.");
+            }
+          });
+        } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+          video.src = url;
+          video.addEventListener("loadedmetadata", function () {
+            var p = video.play();
+            if (p && p.catch) p.catch(function () {});
+          }, { once: true });
+        } else {
+          setStatus("err", "qo‘llab-quvvatlanmaydi");
+          showOverlay("<strong>Brauzer HLS ni qo‘llab-quvvatlamaydi.</strong>", false);
+        }
+      }
+
+      video.addEventListener("playing", onPlaying);
+      video.addEventListener("waiting", function () { setStatus("live", "buffer…"); });
+      document.getElementById("reloadBtn").addEventListener("click", start);
+      start();
+    })();
+  </script>
+</body>
+</html>

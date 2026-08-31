@@ -1,0 +1,14 @@
+<Files "config.php">
+  Require all denied
+</Files>
+
+# HLS MIME types
+AddType application/vnd.apple.mpegurl .m3u8
+AddType video/mp2t .ts
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.(m3u8|ts)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Access-Control-Allow-Origin "*"
+  </FilesMatch>
+</IfModule>

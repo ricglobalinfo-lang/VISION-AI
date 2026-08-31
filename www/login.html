@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LOGIN — NEURAL.EYE</title>
+  <style>
+    :root {
+      --void: #020604;
+      --bg0: #06110a;
+      --granite: #0c1e14;
+      --line: #2a8f52;
+      --line-dim: #1a5c36;
+      --text: #b8ffce;
+      --muted: #3d8f5c;
+      --accent: #33ff88;
+      --danger: #ff3344;
+      --font: Consolas, "Courier New", monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      font-family: var(--font);
+      color: var(--text);
+      background:
+        radial-gradient(ellipse at 20% 0%, #0a2a18 0%, transparent 50%),
+        var(--bg0);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+    }
+    .card {
+      width: min(420px, 100%);
+      border: 1px solid var(--line-dim);
+      background: var(--granite);
+      padding: 1.35rem 1.25rem 1.5rem;
+    }
+    .brand {
+      font-size: 1.15rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.35rem;
+    }
+    .sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      margin-bottom: 1.2rem;
+    }
+    label {
+      display: block;
+      font-size: 0.68rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin: 0.75rem 0 0.35rem;
+    }
+    input {
+      width: 100%;
+      border: 1px solid var(--line-dim);
+      background: #041008;
+      color: var(--text);
+      font: inherit;
+      padding: 0.65rem 0.7rem;
+      outline: none;
+    }
+    input:focus { border-color: var(--line); }
+    button {
+      width: 100%;
+      margin-top: 1.15rem;
+      border: 1px solid var(--accent);
+      background: #0a2818;
+      color: var(--accent);
+      font: inherit;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.75rem;
+      cursor: pointer;
+    }
+    button:hover { background: #0f3a22; }
+    .err {
+      margin-top: 0.85rem;
+      font-size: 0.78rem;
+      color: var(--danger);
+      min-height: 1.1em;
+    }
+  </style>
+</head>
+<body>
+  <form class="card" id="loginForm" autocomplete="on">
+    <div class="brand">NEURAL.EYE / LOGIN</div>
+    <div class="sub">// AUTH REQUIRED — LOCAL NODE</div>
+    <label for="user">Login</label>
+    <input id="user" name="username" type="text" autocomplete="username" required>
+    <label for="pass">Parol</label>
+    <input id="pass" name="password" type="password" autocomplete="current-password" required>
+    <button type="submit">[ KIRISH ]</button>
+    <div class="err" id="err"></div>
+  </form>
+  <script>
+    document.getElementById("loginForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var err = document.getElementById("err");
+      err.textContent = "";
+      var body = {
+        username: document.getElementById("user").value,
+        password: document.getElementById("pass").value
+      };
+      fetch("/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      })
+        .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+        .then(function (res) {
+          if (!res.ok || !res.j.ok) {
+            err.textContent = (res.j && res.j.error) || "Login xato";
+            return;
+          }
+          var next = new URLSearchParams(location.search).get("next") || "/ai.html";
+          location.href = next;
+        })
+        .catch(function () { err.textContent = "Serverga ulanish xatosi"; });
+    });
+  </script>
+</body>
+</html>
